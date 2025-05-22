@@ -1,6 +1,9 @@
 package server
 
-import "fmt"
+import (
+	"errors"
+	"strings"
+)
 
 // TODO handle body
 type Request struct {
@@ -14,7 +17,30 @@ func ParseReq(rawData []byte) (*Request, error) {
 	req := &Request{
 		headers: make(map[string]string),
 	}
-	fmt.Printf("%v", rawData)
+	lines := strings.Split(string(rawData), "\r\n")
+
+	requesLine := strings.Split(lines[0], " ")
+	if len(requesLine) < 3 {
+		return nil, errors.New("Invalid request")
+	}
+
+	req.method = requesLine[0]
+	req.path = requesLine[1]
+	req.proto = requesLine[2]
+
+	i := 1
+	for ; i < len(lines); i++ {
+		currLine := lines[i]
+		if currLine == "" {
+			i++
+			break
+		}
+
+		values := strings.Split(currLine, ":")
+		req.headers[values[0]] = strings.TrimRight(values[1], " ")
+	}
+
+	/* Parse body by using index i	 */
 
 	return req, nil
 }

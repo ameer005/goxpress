@@ -34,6 +34,7 @@ func (t *Server) Listen() error {
 }
 
 func (t *Server) handleConnection(con net.Conn) {
+
 	var rawData = make([]byte, 1024)
 	_, err := con.Read(rawData)
 
@@ -41,5 +42,16 @@ func (t *Server) handleConnection(con net.Conn) {
 		fmt.Println("Invalid request", err)
 	}
 
-	ParseReq(rawData)
+	/*Creating request and response */
+	req, err := ParseReq(rawData)
+
+	if err != nil {
+		fmt.Println("failed to parse request ", err)
+		return
+	}
+
+	res := NewResponse(con)
+
+	ctx := NewContext(req, res)
+	fmt.Println(ctx.res.statusCode)
 }
