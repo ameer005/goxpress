@@ -6,11 +6,12 @@ import (
 )
 
 type Server struct {
-	addr string
+	addr   string
+	Router *Router
 }
 
 func NewServer(addr string) *Server {
-	return &Server{addr: addr}
+	return &Server{addr: addr, Router: &Router{}}
 }
 
 func (t *Server) Listen() error {
@@ -34,10 +35,11 @@ func (t *Server) Listen() error {
 }
 
 func (t *Server) handleConnection(con net.Conn) {
-
+	/*initializing bytes slice to store request data*/
 	var rawData = make([]byte, 1024)
-	_, err := con.Read(rawData)
 
+	/*Storing raw bytes to rawData slice*/
+	_, err := con.Read(rawData)
 	if err != nil {
 		fmt.Println("Invalid request", err)
 	}
@@ -53,5 +55,5 @@ func (t *Server) handleConnection(con net.Conn) {
 	res := NewResponse(con)
 
 	ctx := NewContext(req, res)
-	fmt.Println(ctx.res.statusCode)
+	HandleRequest(ctx, t.Router)
 }

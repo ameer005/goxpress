@@ -5,8 +5,10 @@ import (
 	server "http-server/internals"
 )
 
+var app *server.Server = server.NewServer(":8080")
+
 func main() {
-	app := server.NewServer(":8080")
+
 	err := app.Listen()
 	if err != nil {
 		fmt.Println("Connectin Error")
