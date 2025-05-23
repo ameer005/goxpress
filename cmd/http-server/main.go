@@ -11,11 +11,7 @@ var app *server.Server = server.NewServer(":8080")
 func main() {
 	router := app.Router
 	router.Route(httpmethod.GET, "/", func(ctx *server.Context) {
-
-	})
-
-	router.Route(httpmethod.GET, "/api", func(ctx *server.Context) {
-
+		ctx.Res.Status(200).Send("yo")
 	})
 
 	err := app.Listen()

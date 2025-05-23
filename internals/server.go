@@ -36,6 +36,9 @@ func (t *Server) Listen() error {
 }
 
 func (t *Server) handleConnection(con net.Conn) {
+	// closing connection after successfully handleing this request
+	defer con.Close()
+
 	/*initializing bytes slice to store request data*/
 	var rawData = make([]byte, 1024)
 
@@ -56,5 +59,6 @@ func (t *Server) handleConnection(con net.Conn) {
 	res := NewResponse(con)
 
 	ctx := NewContext(req, res)
+
 	HandleRequest(ctx, t.Router)
 }

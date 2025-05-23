@@ -14,19 +14,17 @@ type Router struct {
 }
 
 func HandleRequest(ctx *Context, router *Router) {
-	method := ctx.req.method
-	path := ctx.req.path
+	method := ctx.Req.method
+	path := ctx.Req.path
 
 	handler, ok := router.routes[httpmethod.Method(method)][path]
 
 	if !ok {
-		fmt.Println("not found sex sux")
+		fmt.Println("Page not found")
 		return
 	}
 
 	handler(ctx)
-
-	println(method, path)
 }
 
 func (t *Router) Route(method httpmethod.Method, path string, handler HandlerFunc) {

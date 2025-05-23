@@ -44,3 +44,7 @@ func ParseReq(rawData []byte) (*Request, error) {
 
 	return req, nil
 }
+
+func (t *Request) Headers(key string) string {
+	return t.headers[key]
+}

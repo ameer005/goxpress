@@ -1,10 +1,10 @@
 package server
 
 type Context struct {
-	req *Request
-	res *Response
+	Req *Request
+	Res *Response
 }
 
 func NewContext(req *Request, res *Response) *Context {
-	return &Context{req: req, res: res}
+	return &Context{Req: req, Res: res}
 }
