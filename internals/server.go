@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	"http-server/internals/httpmethod"
 	"net"
 )
 
@@ -11,7 +12,7 @@ type Server struct {
 }
 
 func NewServer(addr string) *Server {
-	return &Server{addr: addr, Router: &Router{}}
+	return &Server{addr: addr, Router: &Router{routes: make(map[httpmethod.Method]map[string]HandlerFunc)}}
 }
 
 func (t *Server) Listen() error {
