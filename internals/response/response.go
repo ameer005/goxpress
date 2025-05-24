@@ -1,10 +1,11 @@
-package server
+package response
 
 import (
 	"fmt"
 	"http-server/internals/phrase"
 	"net"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -38,10 +39,18 @@ func (t *Response) SetHeader(key, value string) *Response {
 	return t
 }
 
-func (t *Response) Send(body string) {
-	line := statusLine("HTTP/1.1", t.statusCode)
-	fmt.Println(line)
+func (t *Response) Send(message string) {
+	// setting headers
+	t.SetHeader("Content-Length", fmt.Sprintf("%d", len(message)))
 
+	// building response text
+	line := statusLine("HTTP/1.1", t.statusCode)
+	headers := responseHeaders(t.headers)
+	res := line + headers + message
+
+	// sending response
+	t.con.Write([]byte(res))
+	return
 }
 
 // Helpers
@@ -52,4 +61,20 @@ func statusLine(version string, code int) string {
 	}
 
 	return version + " " + fmt.Sprintf("%d", code) + " " + phrase + "\r\n"
+}
+
+// method to build header in this format "key: value \r\n"
+func responseHeaders(headers map[string]string) string {
+	var headersString strings.Builder
+	for k, v := range headers {
+		headersString.WriteString(k)
+		headersString.WriteString(": ")
+		headersString.WriteString(v)
+		headersString.WriteString("\r\n")
+	}
+
+	headersString.WriteString("\r\n") // End of headers
+
+	return headersString.String()
+
 }

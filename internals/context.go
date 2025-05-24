@@ -1,10 +1,15 @@
 package server
 
+import (
+	"http-server/internals/request"
+	"http-server/internals/response"
+)
+
 type Context struct {
-	Req *Request
-	Res *Response
+	Req *request.Request
+	Res *response.Response
 }
 
-func NewContext(req *Request, res *Response) *Context {
+func NewContext(req *request.Request, res *response.Response) *Context {
 	return &Context{Req: req, Res: res}
 }

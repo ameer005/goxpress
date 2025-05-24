@@ -3,6 +3,8 @@ package server
 import (
 	"fmt"
 	"http-server/internals/httpmethod"
+	"http-server/internals/request"
+	"http-server/internals/response"
 	"net"
 )
 
@@ -49,14 +51,14 @@ func (t *Server) handleConnection(con net.Conn) {
 	}
 
 	/*Creating request and response */
-	req, err := ParseReq(rawData)
+	req, err := request.ParseReq(rawData)
 
 	if err != nil {
 		fmt.Println("failed to parse request ", err)
 		return
 	}
 
-	res := NewResponse(con)
+	res := response.NewResponse(con)
 
 	ctx := NewContext(req, res)
 

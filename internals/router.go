@@ -14,8 +14,8 @@ type Router struct {
 }
 
 func HandleRequest(ctx *Context, router *Router) {
-	method := ctx.Req.method
-	path := ctx.Req.path
+	method := ctx.Req.RequestMethod()
+	path := ctx.Req.RequestPath()
 
 	handler, ok := router.routes[httpmethod.Method(method)][path]
 

@@ -1,4 +1,4 @@
-package server
+package request
 
 import (
 	"errors"
@@ -45,6 +45,15 @@ func ParseReq(rawData []byte) (*Request, error) {
 	return req, nil
 }
 
+// Getters
 func (t *Request) Headers(key string) string {
 	return t.headers[key]
+}
+
+func (t *Request) RequestMethod() string {
+	return t.method
+}
+
+func (t *Request) RequestPath() string {
+	return t.path
 }
