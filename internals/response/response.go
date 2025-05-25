@@ -1,6 +1,7 @@
 package response
 
 import (
+	"encoding/json"
 	"fmt"
 	"http-server/internals/phrase"
 	"net"
@@ -54,6 +55,26 @@ func (t *Response) Send(message string) {
 	// sending response
 	t.con.Write([]byte(res))
 	return
+}
+
+func (t *Response) JSON(payload map[string]any) {
+	t.SetHeader("Content-Type", "application/json")
+
+	jsonData, err := json.Marshal(payload)
+	if err != nil {
+		fmt.Println("Failed to marshal JSON:", err)
+		t.Status(500).Send("Internal Server Error")
+	}
+
+	t.SetHeader("Content-Length", fmt.Sprintf("%d", len(jsonData)))
+
+	line := statusLine("HTTP/1.1", t.statusCode)
+	headers := responseHeaders(t.headers)
+	res := line + headers + string(jsonData)
+
+	t.con.Write([]byte(res))
+	return
+
 }
 
 // Helpers

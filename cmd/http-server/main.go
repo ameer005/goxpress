@@ -11,7 +11,13 @@ var app *server.Server = server.NewServer(":8080")
 func main() {
 	router := app.Router
 	router.Route(httpmethod.GET, "/", func(ctx *server.Context) {
-		ctx.Res.Status(200).Send("yo")
+		resData := map[string]any{
+			"name":   "Alice",
+			"age":    30,
+			"skills": []string{"skdfjd", "sdfsdf"},
+		}
+
+		ctx.Res.Status(200).JSON(resData)
 	})
 
 	router.Route(httpmethod.POST, "/", func(ctx *server.Context) {
@@ -30,6 +36,12 @@ func main() {
 		fmt.Println(body.Name)
 
 		ctx.Res.Status(200).Send("yo")
+	})
+
+	router.Route(httpmethod.POST, "/form", func(ctx *server.Context) {
+		formData, _ := ctx.Req.ParseURLEncodedForm()
+		fmt.Printf("%v", formData)
+		ctx.Res.Status(201).Send("yoo")
 	})
 
 	err := app.Listen()

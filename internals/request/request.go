@@ -3,6 +3,8 @@ package request
 import (
 	"bytes"
 	"errors"
+	"fmt"
+	"net/url"
 	"strings"
 )
 
@@ -78,4 +80,35 @@ func (t *Request) RequestPath() string {
 
 func (t *Request) RawBody() []byte {
 	return t.body
+}
+
+// Parse URL encoded form data
+func (t *Request) ParseURLEncodedForm() (map[string]string, error) {
+	formData := make(map[string]string)
+
+	data := strings.Split(string(t.body), "&")
+
+	for _, pair := range data {
+		if pair == "" {
+			continue
+		}
+
+		parts := strings.SplitN(pair, "=", 2)
+		key, err := url.QueryUnescape(parts[0])
+		if err != nil {
+			return nil, fmt.Errorf("invalid key encoding: %w", err)
+		}
+
+		var value string
+		if len(parts) > 1 {
+			value, err = url.QueryUnescape(parts[1])
+			if err != nil {
+				return nil, fmt.Errorf("invalid value encoding: %w", err)
+			}
+		}
+
+		formData[key] = value
+	}
+
+	return formData, nil
 }
