@@ -15,6 +15,7 @@ type Request struct {
 	proto   string
 	headers map[string]string
 	body    []byte
+	params  map[string]string
 }
 
 func ParseReq(rawData []byte) (*Request, error) {
@@ -61,6 +62,7 @@ func ParseReq(rawData []byte) (*Request, error) {
 
 	// assiging body data
 	req.body = bytes.TrimRight(bodyPart, "\x00 \n\r\t")
+	req.params = make(map[string]string)
 
 	return req, nil
 }
@@ -80,6 +82,14 @@ func (t *Request) RequestPath() string {
 
 func (t *Request) RawBody() []byte {
 	return t.body
+}
+
+func (t *Request) SetRequestParam(key, value string) {
+	t.params[key] = value
+}
+
+func (t *Request) GetParams() map[string]string {
+	return t.params
 }
 
 // Parse URL encoded form data

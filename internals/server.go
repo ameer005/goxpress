@@ -15,7 +15,7 @@ type Server struct {
 }
 
 func NewServer(addr string) *Server {
-	return &Server{addr: addr, Router: &Router{routes: make(map[httpmethod.Method]map[string]HandlerFunc)}}
+	return &Server{addr: addr, Router: &Router{routes: make(map[httpmethod.Method][]RouteEntry)}}
 }
 
 func (t *Server) Listen() error {

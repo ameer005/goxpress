@@ -57,6 +57,7 @@ func (t *Response) Send(message string) {
 	return
 }
 
+// send json response
 func (t *Response) JSON(payload map[string]any) {
 	t.SetHeader("Content-Type", "application/json")
 

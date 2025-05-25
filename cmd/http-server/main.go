@@ -10,7 +10,10 @@ var app *server.Server = server.NewServer(":8080")
 
 func main() {
 	router := app.Router
-	router.Route(httpmethod.GET, "/", func(ctx *server.Context) {
+	router.Route(httpmethod.GET, "/user/:id", func(ctx *server.Context) {
+
+		params := ctx.Req.GetParams()
+		fmt.Printf("%v", params)
 		resData := map[string]any{
 			"name":   "Alice",
 			"age":    30,
