@@ -29,16 +29,19 @@ func NewResponse(con net.Conn) *Response {
 	}
 }
 
+// Client side method for Setting response status code
 func (t *Response) Status(code int) *Response {
 	t.statusCode = code
 	return t
 }
 
+// Client side method for Setting headers status code
 func (t *Response) SetHeader(key, value string) *Response {
 	t.headers[key] = value
 	return t
 }
 
+// Client side basic send reponse method
 func (t *Response) Send(message string) {
 	// setting headers
 	t.SetHeader("Content-Length", fmt.Sprintf("%d", len(message)))

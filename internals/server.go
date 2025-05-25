@@ -1,6 +1,7 @@
 package server
 
 import (
+	"encoding/json"
 	"fmt"
 	"http-server/internals/httpmethod"
 	"http-server/internals/request"
@@ -63,4 +64,12 @@ func (t *Server) handleConnection(con net.Conn) {
 	ctx := NewContext(req, res)
 
 	HandleRequest(ctx, t.Router)
+}
+
+func JSONBody[T any](r *request.Request) (T, error) {
+	var data T
+
+	err := json.Unmarshal(r.RawBody(), &data)
+
+	return data, err
 }
