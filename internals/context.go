@@ -6,10 +6,11 @@ import (
 )
 
 type Context struct {
-	Req *request.Request
-	Res *response.Response
+	Req  *request.Request
+	Res  *response.Response
+	Data map[string]any
 }
 
 func NewContext(req *request.Request, res *response.Response) *Context {
-	return &Context{Req: req, Res: res}
+	return &Context{Req: req, Res: res, Data: make(map[string]any)}
 }

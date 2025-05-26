@@ -1,22 +1,30 @@
 package server
 
 import (
+	"errors"
 	"http-server/internals/httpmethod"
 	"regexp"
 )
 
 type HandlerFunc func(ctx *Context)
+type MiddlwareFunc func(ctx *Context)
 
 type RouteEntry struct {
-	path    string
-	regex   *regexp.Regexp
-	keys    []string
-	hanlder HandlerFunc
+	path        string
+	regex       *regexp.Regexp
+	keys        []string
+	hanlder     HandlerFunc
+	middlewares []MiddlwareFunc
 }
 
 type Router struct {
 	// method > [router entry]
-	routes map[httpmethod.Method][]RouteEntry
+	routes            map[httpmethod.Method][]RouteEntry
+	globalMiddlewares []MiddlwareFunc
+}
+
+func (t *Router) Use(middlware MiddlwareFunc) {
+	t.globalMiddlewares = append(t.globalMiddlewares, middlware)
 }
 
 // Client side method for defining route and handler function
@@ -24,10 +32,11 @@ func (t *Router) Route(method httpmethod.Method, path string, handler HandlerFun
 	regex, keys := parsePath(path)
 
 	entry := RouteEntry{
-		path:    path,
-		regex:   regex,
-		keys:    keys,
-		hanlder: handler,
+		path:        path,
+		regex:       regex,
+		keys:        keys,
+		hanlder:     handler,
+		middlewares: []MiddlwareFunc{},
 	}
 
 	if _, ok := t.routes[method]; !ok {
@@ -63,7 +72,13 @@ func HandleRequest(ctx *Context, router *Router) {
 				ctx.Req.SetRequestParam(key, matches[i+1])
 			}
 
-			// funning route handler
+			// running middlewares
+			err := router.runMiddlewares(entry.middlewares, ctx)
+			if err != nil {
+				return
+			}
+
+			// rnning route handler
 			entry.hanlder(ctx)
 			return
 		}
@@ -76,6 +91,7 @@ func HandleRequest(ctx *Context, router *Router) {
 
 }
 
+// Helpers
 func parsePath(path string) (*regexp.Regexp, []string) {
 	// for storing params key like id
 	var keys []string
@@ -91,4 +107,28 @@ func parsePath(path string) (*regexp.Regexp, []string) {
 	regexPattern = "^" + regexPattern + "$"
 
 	return regexp.MustCompile(regexPattern), keys
+}
+
+// running all middlewares
+// update ctx or return early
+func (t *Router) runMiddlewares(routeMiddlewares []MiddlwareFunc, ctx *Context) error {
+	// running global middlewares
+	for _, middleware := range t.globalMiddlewares {
+		if ctx.Res.ResponseWritten {
+			return errors.New("Middleware exit early")
+		}
+
+		middleware(ctx)
+	}
+
+	// running route level middlewares
+	for _, middleware := range routeMiddlewares {
+		if ctx.Res.ResponseWritten {
+			return errors.New("Middleware exit early")
+		}
+
+		middleware(ctx)
+	}
+
+	return nil
 }

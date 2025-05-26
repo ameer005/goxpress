@@ -11,17 +11,19 @@ import (
 )
 
 type Response struct {
-	con        net.Conn
-	statusCode int
-	body       []byte
-	headers    map[string]string
+	con             net.Conn
+	statusCode      int
+	body            []byte
+	headers         map[string]string
+	ResponseWritten bool
 }
 
 /*Implement body*/
 func NewResponse(con net.Conn) *Response {
 	return &Response{
-		con:        con,
-		statusCode: 404,
+		con:             con,
+		statusCode:      404,
+		ResponseWritten: false,
 		headers: map[string]string{
 			"Content-Type": "text/plain",
 			"Connection":   "close",
@@ -54,6 +56,7 @@ func (t *Response) Send(message string) {
 
 	// sending response
 	t.con.Write([]byte(res))
+	t.ResponseWritten = true
 	return
 }
 
@@ -74,8 +77,8 @@ func (t *Response) JSON(payload map[string]any) {
 	res := line + headers + string(jsonData)
 
 	t.con.Write([]byte(res))
+	t.ResponseWritten = true
 	return
-
 }
 
 // Helpers

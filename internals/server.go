@@ -15,7 +15,7 @@ type Server struct {
 }
 
 func NewServer(addr string) *Server {
-	return &Server{addr: addr, Router: &Router{routes: make(map[httpmethod.Method][]RouteEntry)}}
+	return &Server{addr: addr, Router: &Router{routes: make(map[httpmethod.Method][]RouteEntry), globalMiddlewares: []MiddlwareFunc{}}}
 }
 
 func (t *Server) Listen() error {
@@ -66,10 +66,17 @@ func (t *Server) handleConnection(con net.Conn) {
 	HandleRequest(ctx, t.Router)
 }
 
+// Parsing json body
+// because it requires generics and you can't add generic in method
 func JSONBody[T any](r *request.Request) (T, error) {
 	var data T
 
 	err := json.Unmarshal(r.RawBody(), &data)
 
 	return data, err
+}
+
+// server method for assigning global middlewares
+func (t *Server) Use(middleware MiddlwareFunc) {
+	t.Router.Use(middleware)
 }
