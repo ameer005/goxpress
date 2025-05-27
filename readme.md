@@ -37,6 +37,22 @@ This project is ideal if you want to:
 
 ---
 
+## 📝 TODO
+
+Here’s what’s coming next (or what you can contribute):
+
+- 🗂️ **Multipart form-data parsing** — support file uploads via `multipart/form-data`
+- 🍪 **Cookie handling** — `ctx.Cookies.Get()`, `ctx.Cookies.Set()`, etc.
+- 🌐 **CORS middleware** — handle cross-origin resource sharing
+- 🛡️ **Rate limiting middleware** — basic protection against abuse
+- 📄 **Static file serving** — serve HTML, CSS, JS, etc.
+- 🔄 **Custom error handler middleware** — centralized error handling
+- 🧰 **Request validators** — validate input data using tags or schemas
+
+> 💡 **Suggestions welcome!** Open an issue or PR if you have an idea you'd like to contribute or discuss.
+
+---
+
 ## 📦 Installation
 
 ```bash

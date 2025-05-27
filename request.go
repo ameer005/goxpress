@@ -2,6 +2,7 @@ package goxpress
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/url"
@@ -145,4 +146,36 @@ func (t *Request) ParseURLEncodedForm() (map[string]string, error) {
 	}
 
 	return formData, nil
+}
+
+// Parsing json body
+// because it requires generics and you can't add generic in method
+func JSONBody[T any](r *Request) (T, error) {
+	var data T
+
+	err := json.Unmarshal(r.RawBody(), &data)
+
+	return data, err
+}
+
+// For getting typesafe query
+func QueryData[T any](r *Request) (T, error) {
+	var data T
+
+	queryMap := r.UntypedQuery() // map[string]string
+
+	// convert map to json
+	jsonBytes, err := json.Marshal(queryMap)
+	if err != nil {
+		return data, err
+	}
+
+	// convert json to struct
+	err = json.Unmarshal(jsonBytes, &data)
+	return data, err
+}
+
+// server method for assigning global middlewares
+func (t *Server) Use(middleware HandlerFunc) {
+	t.Router.Use(middleware)
 }
