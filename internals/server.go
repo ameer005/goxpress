@@ -15,7 +15,7 @@ type Server struct {
 }
 
 func NewServer(addr string) *Server {
-	return &Server{addr: addr, Router: &Router{routes: make(map[httpmethod.Method][]RouteEntry), globalMiddlewares: []MiddlwareFunc{}}}
+	return &Server{addr: addr, Router: &Router{routes: make(map[httpmethod.Method][]RouteEntry), globalMiddlewares: []HandlerFunc{}}}
 }
 
 func (t *Server) Listen() error {
@@ -77,6 +77,6 @@ func JSONBody[T any](r *request.Request) (T, error) {
 }
 
 // server method for assigning global middlewares
-func (t *Server) Use(middleware MiddlwareFunc) {
+func (t *Server) Use(middleware HandlerFunc) {
 	t.Router.Use(middleware)
 }

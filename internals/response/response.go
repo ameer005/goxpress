@@ -54,9 +54,9 @@ func (t *Response) Send(message string) {
 	headers := responseHeaders(t.headers)
 	res := line + headers + message
 
+	t.ResponseWritten = true
 	// sending response
 	t.con.Write([]byte(res))
-	t.ResponseWritten = true
 	return
 }
 

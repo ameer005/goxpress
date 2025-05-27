@@ -7,36 +7,43 @@ import (
 )
 
 type HandlerFunc func(ctx *Context)
-type MiddlwareFunc func(ctx *Context)
 
 type RouteEntry struct {
 	path        string
 	regex       *regexp.Regexp
 	keys        []string
-	hanlder     HandlerFunc
-	middlewares []MiddlwareFunc
+	handler     HandlerFunc
+	middlewares []HandlerFunc
 }
 
 type Router struct {
 	// method > [router entry]
 	routes            map[httpmethod.Method][]RouteEntry
-	globalMiddlewares []MiddlwareFunc
+	globalMiddlewares []HandlerFunc
 }
 
-func (t *Router) Use(middlware MiddlwareFunc) {
+func (t *Router) Use(middlware HandlerFunc) {
 	t.globalMiddlewares = append(t.globalMiddlewares, middlware)
 }
 
 // Client side method for defining route and handler function
-func (t *Router) Route(method httpmethod.Method, path string, handler HandlerFunc) {
+func (t *Router) Route(method httpmethod.Method, path string, handlers ...HandlerFunc) {
+	if len(handlers) == 0 {
+		return
+	}
+
+	// separating main handler function from middlewares
+	mainHandler := handlers[len(handlers)-1]
+	middlewares := handlers[:len(handlers)-1]
+
 	regex, keys := parsePath(path)
 
 	entry := RouteEntry{
 		path:        path,
 		regex:       regex,
 		keys:        keys,
-		hanlder:     handler,
-		middlewares: []MiddlwareFunc{},
+		handler:     mainHandler,
+		middlewares: middlewares,
 	}
 
 	if _, ok := t.routes[method]; !ok {
@@ -79,7 +86,7 @@ func HandleRequest(ctx *Context, router *Router) {
 			}
 
 			// rnning route handler
-			entry.hanlder(ctx)
+			entry.handler(ctx)
 			return
 		}
 
@@ -111,23 +118,23 @@ func parsePath(path string) (*regexp.Regexp, []string) {
 
 // running all middlewares
 // update ctx or return early
-func (t *Router) runMiddlewares(routeMiddlewares []MiddlwareFunc, ctx *Context) error {
+func (t *Router) runMiddlewares(routeMiddlewares []HandlerFunc, ctx *Context) error {
 	// running global middlewares
 	for _, middleware := range t.globalMiddlewares {
+		middleware(ctx)
+
 		if ctx.Res.ResponseWritten {
 			return errors.New("Middleware exit early")
 		}
-
-		middleware(ctx)
 	}
 
 	// running route level middlewares
 	for _, middleware := range routeMiddlewares {
+		middleware(ctx)
+
 		if ctx.Res.ResponseWritten {
 			return errors.New("Middleware exit early")
 		}
-
-		middleware(ctx)
 	}
 
 	return nil
