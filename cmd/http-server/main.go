@@ -21,8 +21,18 @@ func main() {
 	})
 
 	router.Route(httpmethod.GET, "/", routMid, func(ctx *server.Context) {
-		fmt.Println(ctx.Data["global"])
-		fmt.Println(ctx.Data["route"])
+		type getQuery struct {
+			Page int    `json:"page,string"`
+			Q    string `json:"q"`
+		}
+
+		q, err := server.QueryData[getQuery](ctx.Req)
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		fmt.Println(q.Page)
+		fmt.Println(q.Q)
 
 		ctx.Res.Status(200).Send("yo")
 	})

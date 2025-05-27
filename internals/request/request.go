@@ -16,11 +16,13 @@ type Request struct {
 	headers map[string]string
 	body    []byte
 	params  map[string]string
+	query   map[string]string
 }
 
 func ParseReq(rawData []byte) (*Request, error) {
 	req := &Request{
 		headers: make(map[string]string),
+		query:   make(map[string]string),
 	}
 
 	// separting body and header without converting it to string
@@ -64,6 +66,23 @@ func ParseReq(rawData []byte) (*Request, error) {
 	req.body = bytes.TrimRight(bodyPart, "\x00 \n\r\t")
 	req.params = make(map[string]string)
 
+	// parsing path and queries
+	pathParts := strings.SplitN(req.path, "?", 2)
+	if len(pathParts) == 2 {
+		req.path = pathParts[0]
+		rawQuery := pathParts[1]
+		pairs := strings.Split(rawQuery, "&")
+
+		for _, query := range pairs {
+			queryPairs := strings.SplitN(query, "=", 2)
+			if len(queryPairs) < 2 {
+				continue
+			}
+			req.query[queryPairs[0]] = queryPairs[1]
+		}
+
+	}
+
 	return req, nil
 }
 
@@ -84,11 +103,16 @@ func (t *Request) RawBody() []byte {
 	return t.body
 }
 
+func (t *Request) UntypedQuery() map[string]string {
+	return t.query
+}
+
 func (t *Request) SetRequestParam(key, value string) {
 	t.params[key] = value
 }
 
 func (t *Request) GetParams() map[string]string {
+
 	return t.params
 }
 
