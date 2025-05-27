@@ -1,14 +1,15 @@
-package server
+package goxpress
 
 import (
 	"errors"
-	"http-server/internals/httpmethod"
 	"regexp"
+
+	"github.com/ameer005/goxpress/httpmethod"
 )
 
 type HandlerFunc func(ctx *Context)
 
-type RouteEntry struct {
+type routeEntry struct {
 	path        string
 	regex       *regexp.Regexp
 	keys        []string
@@ -16,18 +17,18 @@ type RouteEntry struct {
 	middlewares []HandlerFunc
 }
 
-type Router struct {
+type router struct {
 	// method > [router entry]
-	routes            map[httpmethod.Method][]RouteEntry
+	routes            map[httpmethod.Method][]routeEntry
 	globalMiddlewares []HandlerFunc
 }
 
-func (t *Router) Use(middlware HandlerFunc) {
+func (t *router) Use(middlware HandlerFunc) {
 	t.globalMiddlewares = append(t.globalMiddlewares, middlware)
 }
 
 // Client side method for defining route and handler function
-func (t *Router) Route(method httpmethod.Method, path string, handlers ...HandlerFunc) {
+func (t *router) Route(method httpmethod.Method, path string, handlers ...HandlerFunc) {
 	if len(handlers) == 0 {
 		return
 	}
@@ -38,7 +39,7 @@ func (t *Router) Route(method httpmethod.Method, path string, handlers ...Handle
 
 	regex, keys := parsePath(path)
 
-	entry := RouteEntry{
+	entry := routeEntry{
 		path:        path,
 		regex:       regex,
 		keys:        keys,
@@ -47,14 +48,14 @@ func (t *Router) Route(method httpmethod.Method, path string, handlers ...Handle
 	}
 
 	if _, ok := t.routes[method]; !ok {
-		t.routes[method] = []RouteEntry{}
+		t.routes[method] = []routeEntry{}
 
 	}
 	t.routes[method] = append(t.routes[method], entry)
 }
 
 // Internal method for handling incoming requests
-func HandleRequest(ctx *Context, router *Router) {
+func HandleRequest(ctx *Context, router *router) {
 	method := ctx.Req.RequestMethod()
 	path := ctx.Req.RequestPath()
 
@@ -118,7 +119,7 @@ func parsePath(path string) (*regexp.Regexp, []string) {
 
 // running all middlewares
 // update ctx or return early
-func (t *Router) runMiddlewares(routeMiddlewares []HandlerFunc, ctx *Context) error {
+func (t *router) runMiddlewares(routeMiddlewares []HandlerFunc, ctx *Context) error {
 	// running global middlewares
 	for _, middleware := range t.globalMiddlewares {
 		middleware(ctx)

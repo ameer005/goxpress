@@ -1,4 +1,4 @@
-package request
+package goxpress
 
 import (
 	"bytes"
@@ -19,7 +19,7 @@ type Request struct {
 	query   map[string]string
 }
 
-func ParseReq(rawData []byte) (*Request, error) {
+func parseReq(rawData []byte) (*Request, error) {
 	req := &Request{
 		headers: make(map[string]string),
 		query:   make(map[string]string),

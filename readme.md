@@ -1,23 +1,45 @@
-# Simple HTTP Server from Scratch
+# Goxpress
 
-This project is a **basic HTTP server implemented from scratch** for learning purposes. The goal is to understand the inner workings of an HTTP server by building it step-by-step without relying on existing web server frameworks.
-
----
-
-## Features
-
-- Listens for TCP connections and accepts HTTP requests
-- Parses HTTP request lines and headers
-- Supports GET requests for static files
-- Generates basic HTTP responses with appropriate status codes
-- Handles 404 Not Found for missing files
-- Basic request logging
-- Simple routing and MIME type handling
+**Goxpress** is an Express-like web framework built entirely in **Go** — including its own custom **HTTP server implementation**.  
+It does **not** rely on Go’s `net/http` package. Instead, it parses raw TCP connections and builds HTTP handling, routing, middleware, and more from scratch.
 
 ---
 
-## Status
+## 🎯 Purpose
 
-This project is a **work in progress** and serves as an educational tool. It is **not intended for production use**.
+> Goxpress is built **for learning and experimentation**.  
+> Use it in personal or hobby projects — but it's **not production-ready** and not recommended for professional deployments.
+
+This project is ideal if you want to:
+
+- Understand how web frameworks like Express.js work under the hood
+- Learn low-level HTTP, TCP, and middleware patterns in Go
+- Experiment with building your own server infrastructure
 
 ---
+
+## ✨ Features
+
+- 🔧 Custom HTTP parser — handles raw TCP connections
+- 🛣️ Routing with support for:
+  - Static routes: `/about`
+  - Dynamic routes: `/user/:id`
+- 📦 Body parsers:
+  - `application/json`
+  - `application/x-www-form-urlencoded`
+  - `text/plain`
+- 🔐 Middleware support (like Express)
+  - Global middleware
+  - Early return (e.g., auth middleware)
+- ⚙️ Typed query and body parsing using Go generics
+- 🧠 Custom context: `ctx.Req`, `ctx.Res`, `ctx.Data` — shared across middleware and routes
+- 📤 Easy JSON/string responses
+
+---
+
+## 📦 Installation
+
+```bash
+go get github.com/ameer005/goxpress
+
+```

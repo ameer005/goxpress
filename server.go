@@ -1,21 +1,20 @@
-package server
+package goxpress
 
 import (
 	"encoding/json"
 	"fmt"
-	"http-server/internals/httpmethod"
-	"http-server/internals/request"
-	"http-server/internals/response"
 	"net"
+
+	"github.com/ameer005/goxpress/httpmethod"
 )
 
 type Server struct {
 	addr   string
-	Router *Router
+	Router *router
 }
 
 func NewServer(addr string) *Server {
-	return &Server{addr: addr, Router: &Router{routes: make(map[httpmethod.Method][]RouteEntry), globalMiddlewares: []HandlerFunc{}}}
+	return &Server{addr: addr, Router: &router{routes: make(map[httpmethod.Method][]routeEntry), globalMiddlewares: []HandlerFunc{}}}
 }
 
 func (t *Server) Listen() error {
@@ -52,14 +51,14 @@ func (t *Server) handleConnection(con net.Conn) {
 	}
 
 	/*Creating request and response */
-	req, err := request.ParseReq(rawData)
+	req, err := parseReq(rawData)
 
 	if err != nil {
 		fmt.Println("failed to parse request ", err)
 		return
 	}
 
-	res := response.NewResponse(con)
+	res := NewResponse(con)
 
 	ctx := NewContext(req, res)
 
@@ -68,7 +67,7 @@ func (t *Server) handleConnection(con net.Conn) {
 
 // Parsing json body
 // because it requires generics and you can't add generic in method
-func JSONBody[T any](r *request.Request) (T, error) {
+func JSONBody[T any](r *Request) (T, error) {
 	var data T
 
 	err := json.Unmarshal(r.RawBody(), &data)
@@ -77,7 +76,7 @@ func JSONBody[T any](r *request.Request) (T, error) {
 }
 
 // For getting typesafe query
-func QueryData[T any](r *request.Request) (T, error) {
+func QueryData[T any](r *Request) (T, error) {
 	var data T
 
 	queryMap := r.UntypedQuery() // map[string]string

@@ -2,31 +2,32 @@ package main
 
 import (
 	"fmt"
-	server "http-server/internals"
-	"http-server/internals/httpmethod"
+
+	"github.com/ameer005/goxpress"
+	"github.com/ameer005/goxpress/httpmethod"
 )
 
-var app *server.Server = server.NewServer(":8080")
+var app *goxpress.Server = goxpress.NewServer(":8080")
 
-func routMid(ctx *server.Context) {
+func routMid(ctx *goxpress.Context) {
 	ctx.Data["route"] = "message from route level handler"
 }
 
 func main() {
 	router := app.Router
 
-	app.Use(func(ctx *server.Context) {
+	app.Use(func(ctx *goxpress.Context) {
 
 		ctx.Data["global"] = "message from global function"
 	})
 
-	router.Route(httpmethod.GET, "/", routMid, func(ctx *server.Context) {
+	router.Route(httpmethod.GET, "/", routMid, func(ctx *goxpress.Context) {
 		type getQuery struct {
 			Page int    `json:"page,string"`
 			Q    string `json:"q"`
 		}
 
-		q, err := server.QueryData[getQuery](ctx.Req)
+		q, err := goxpress.QueryData[getQuery](ctx.Req)
 		if err != nil {
 			fmt.Println(err)
 		}

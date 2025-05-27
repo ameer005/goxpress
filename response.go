@@ -1,13 +1,14 @@
-package response
+package goxpress
 
 import (
 	"encoding/json"
 	"fmt"
-	"http-server/internals/phrase"
 	"net"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/ameer005/goxpress/internals/phrase"
 )
 
 type Response struct {
