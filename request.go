@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net"
 	"net/url"
 	"strings"
 )
@@ -18,30 +19,31 @@ type Request struct {
 	body    []byte
 	params  map[string]string
 	query   map[string]string
+	con     net.Conn
 }
 
-func parseReq(rawData []byte) (*Request, error) {
+func parseReq(rawData []byte, con net.Conn) (*Request, error) {
 	req := &Request{
 		headers: make(map[string]string),
 		query:   make(map[string]string),
+		con:     con,
 	}
 
 	// separting body and header without converting it to string
 	parts := bytes.SplitN(rawData, []byte("\r\n\r\n"), 2)
 
-	if len(parts) < 2 {
-		return nil, errors.New("Invalid request")
+	if len(parts) == 0 {
+		return nil, errors.New("Malformed Request")
 	}
 
 	// converting header to string
 	headerPart := strings.Split(string(parts[0]), "\r\n")
-	bodyPart := parts[1]
 
 	// parsing request line
 	// method / uri / proto
 	requesLine := strings.Split(headerPart[0], " ")
 	if len(requesLine) < 3 {
-		return nil, errors.New("Invalid request")
+		return nil, errors.New("Malformed request line")
 	}
 	req.method = requesLine[0]
 	req.path = requesLine[1]
@@ -60,28 +62,34 @@ func parseReq(rawData []byte) (*Request, error) {
 		if len(values) < 2 {
 			return nil, errors.New("Invalid Headers")
 		}
-		req.headers[values[0]] = strings.TrimRight(values[1], " ")
+		req.headers[values[0]] = strings.TrimLeft(strings.TrimRight(values[1], " "), " ")
 	}
 
-	// assiging body data
-	req.body = bytes.TrimRight(bodyPart, "\x00 \n\r\t")
-	req.params = make(map[string]string)
+	// only parsing body if it exist
+	if len(parts) > 1 {
 
-	// parsing path and queries
-	pathParts := strings.SplitN(req.path, "?", 2)
-	if len(pathParts) == 2 {
-		req.path = pathParts[0]
-		rawQuery := pathParts[1]
-		pairs := strings.Split(rawQuery, "&")
+		// assiging body data
+		bodyPart := parts[1]
 
-		for _, query := range pairs {
-			queryPairs := strings.SplitN(query, "=", 2)
-			if len(queryPairs) < 2 {
-				continue
+		req.body = bytes.TrimRight(bodyPart, "\x00 \n\r\t")
+		req.params = make(map[string]string)
+
+		// parsing path and queries
+		pathParts := strings.SplitN(req.path, "?", 2)
+		if len(pathParts) == 2 {
+			req.path = pathParts[0]
+			rawQuery := pathParts[1]
+			pairs := strings.Split(rawQuery, "&")
+
+			for _, query := range pairs {
+				queryPairs := strings.SplitN(query, "=", 2)
+				if len(queryPairs) < 2 {
+					continue
+				}
+				req.query[queryPairs[0]] = queryPairs[1]
 			}
-			req.query[queryPairs[0]] = queryPairs[1]
-		}
 
+		}
 	}
 
 	return req, nil
@@ -115,6 +123,10 @@ func (t *Request) SetRequestParam(key, value string) {
 func (t *Request) GetParams() map[string]string {
 
 	return t.params
+}
+func (t *Request) GetReqPath() string {
+
+	return t.path
 }
 
 // Parse URL encoded form data
@@ -175,7 +187,38 @@ func QueryData[T any](r *Request) (T, error) {
 	return data, err
 }
 
-// server method for assigning global middlewares
-func (t *Server) Use(middleware HandlerFunc) {
-	t.Router.Use(middleware)
+// for parsing multipart data it takes sizeLimit (byes)
+func (t *Request) ParseMultipart(sizeLimit int) error {
+
+	if !strings.Contains(t.headers["Content-Type"], "multipart/form-data") {
+		return errors.New("Incorrect content type")
+	}
+
+	// method to send client permission to send data
+	if t.headers["Expect"] == "100-continue" {
+		/* status := statusLine(t.proto, 100) */
+		/* con.Write([]byte(status)) */
+
+		/* var buf bytes.Buffer */
+		/* io.Copy(&buf, con) */
+		/**/
+		/* fullBody := buf.Bytes() */
+		/* fmt.Println(string(fullBody)) */
+
+	}
+
+	// parsing multipart form data
+	if strings.Contains(t.headers["Content-Type"], "multipart/form-data") {
+		/* contentType := strings.SplitN(req.headers["Content-Type"], "=", 2) */
+		/* boundary := strings.TrimSpace(contentType[1]) */
+		/* bodyParts := bytes.Split(req.body, []byte("--"+boundary)) */
+		/**/
+		/* fmt.Println(bodyParts) */
+		/* for _, data := range bodyParts { */
+		/* 	fmt.Println("Part data:") */
+		/* 	fmt.Println(string(data)) */
+		/* } */
+	}
+
+	return nil
 }

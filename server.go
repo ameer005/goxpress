@@ -50,7 +50,7 @@ func (t *Server) handleConnection(con net.Conn) {
 	}
 
 	/*Creating request and response */
-	req, err := parseReq(rawData)
+	req, err := parseReq(rawData, con)
 
 	if err != nil {
 		fmt.Println("failed to parse request ", err)
@@ -62,4 +62,9 @@ func (t *Server) handleConnection(con net.Conn) {
 	ctx := NewContext(req, res)
 
 	HandleRequest(ctx, t.Router)
+}
+
+// server method for assigning global middlewares
+func (t *Server) Use(middleware HandlerFunc) {
+	t.Router.Use(middleware)
 }

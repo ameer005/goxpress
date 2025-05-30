@@ -5,6 +5,7 @@ import (
 
 	"github.com/ameer005/goxpress"
 	"github.com/ameer005/goxpress/httpmethod"
+	middleware "github.com/ameer005/goxpress/middlewares"
 )
 
 var app *goxpress.Server = goxpress.NewServer(":8080")
@@ -15,6 +16,9 @@ func routMid(ctx *goxpress.Context) {
 
 func main() {
 	router := app.Router
+	app.Use(middleware.Cors(middleware.CorsOptions{
+		AllowOrigin: []string{"localhost:8080"},
+	}))
 
 	app.Use(func(ctx *goxpress.Context) {
 
@@ -22,19 +26,6 @@ func main() {
 	})
 
 	router.Route(httpmethod.GET, "/", routMid, func(ctx *goxpress.Context) {
-		type getQuery struct {
-			Page int    `json:"page,string"`
-			Q    string `json:"q"`
-		}
-
-		q, err := goxpress.QueryData[getQuery](ctx.Req)
-		if err != nil {
-			fmt.Println(err)
-		}
-
-		fmt.Println(q.Page)
-		fmt.Println(q.Q)
-
 		ctx.Res.Status(200).Send("yo")
 	})
 

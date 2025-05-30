@@ -63,6 +63,10 @@ func HandleRequest(ctx *Context, router *router) {
 	entries, ok := router.routes[httpmethod.Method(method)]
 
 	if !ok {
+		// running global middleware
+		router.runMiddlewares(router.globalMiddlewares, ctx)
+
+		// sending not found response
 		ctx.Res.Status(404).Send("route not found")
 		return
 	}
