@@ -1,14 +1,27 @@
 package goxpress
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"log"
+	"mime/multipart"
 	"net"
+	"net/http"
 	"net/url"
+	"os"
 	"strings"
 )
+
+type FormFile struct {
+	Name     string
+	Path     string
+	Size     int64
+	Mimetype string
+}
 
 // TODO handle body
 type Request struct {
@@ -20,6 +33,7 @@ type Request struct {
 	params  map[string]string
 	query   map[string]string
 	con     net.Conn
+	files   map[string]FormFile
 }
 
 func parseReq(rawData []byte, con net.Conn) (*Request, error) {
@@ -27,6 +41,7 @@ func parseReq(rawData []byte, con net.Conn) (*Request, error) {
 		headers: make(map[string]string),
 		query:   make(map[string]string),
 		con:     con,
+		files:   make(map[string]FormFile),
 	}
 
 	// separting body and header without converting it to string
@@ -130,6 +145,124 @@ func (t *Request) GetReqPath() string {
 }
 
 // Parse URL encoded form data
+
+// For getting typesafe query
+func QueryData[T any](r *Request) (T, error) {
+	var data T
+
+	queryMap := r.UntypedQuery() // map[string]string
+
+	// convert map to json
+	jsonBytes, err := json.Marshal(queryMap)
+	if err != nil {
+		return data, err
+	}
+
+	// convert json to struct
+	err = json.Unmarshal(jsonBytes, &data)
+	return data, err
+}
+
+// internal method for parsing multipart data it takes sizeLimit (byes)
+// TODO add size limit
+func (t *Request) parseMultipart() error {
+
+	if !strings.Contains(t.headers["Content-Type"], "multipart/form-data") {
+		return errors.New("Incorrect content type")
+	}
+
+	contentType := strings.SplitN(t.headers["Content-Type"], "=", 2)
+	boundary := strings.TrimSpace(contentType[1])
+
+	// method to send client permission to send data
+	if t.headers["Expect"] == "100-continue" {
+		status := statusLine(t.proto, 100)
+		t.con.Write([]byte(status))
+	}
+
+	mr := multipart.NewReader(bufio.NewReader(t.con), boundary)
+
+	var formFields map[string]string = make(map[string]string)
+
+	for {
+		part, err := mr.NextPart()
+		if err == io.EOF {
+			break
+		}
+
+		if part.FileName() != "" {
+			// handling file upload
+			dst, err := os.Create("/tmp/" + part.FileName())
+			if err != nil {
+				log.Println("Error creating file:", err)
+				continue
+			}
+			defer dst.Close()
+
+			_, err = io.Copy(dst, part)
+			if err != nil {
+				log.Println("Error saving file:", err)
+				continue
+			}
+
+			dstFile, err := os.Open(dst.Name())
+			if err != nil {
+				log.Println("Error reopening file:", err)
+				continue
+			}
+			defer dstFile.Close()
+
+			fileInfo, err := os.Stat(dst.Name())
+			if err != nil {
+				log.Println("File does not exist:", err)
+			}
+
+			// Read first 512 bytes for mimetype detection
+			buffer := make([]byte, 512)
+			n, err := dstFile.Read(buffer)
+			if err != nil && err != io.EOF {
+				log.Println("Error reading file for MIME type:", err)
+				continue
+			}
+
+			metadata := FormFile{
+				Name:     part.FileName(),
+				Path:     dst.Name(),
+				Size:     fileInfo.Size(),
+				Mimetype: http.DetectContentType(buffer[:n]),
+			}
+
+			t.files[part.FormName()] = metadata
+
+		} else {
+			// parsing form fields
+			if part.FormName() != "" {
+				data, err := io.ReadAll(part)
+
+				if err != nil {
+					log.Println("Error reading form field:", err)
+					continue
+				}
+
+				formFields[part.FormName()] = string(data)
+			}
+
+		}
+
+	}
+
+	// converting form fields to bytes then storing it to body
+	formBytes, err := json.Marshal(formFields)
+	if err != nil {
+		log.Println("Error marshaling form fields:", err)
+	} else {
+		t.body = formBytes
+	}
+
+	return nil
+}
+
+// client side parsing functions
 func (t *Request) ParseURLEncodedForm() (map[string]string, error) {
 	formData := make(map[string]string)
 
@@ -170,55 +303,30 @@ func JSONBody[T any](r *Request) (T, error) {
 	return data, err
 }
 
-// For getting typesafe query
-func QueryData[T any](r *Request) (T, error) {
-	var data T
-
-	queryMap := r.UntypedQuery() // map[string]string
-
-	// convert map to json
-	jsonBytes, err := json.Marshal(queryMap)
-	if err != nil {
-		return data, err
+// client side fucntion to get file metadata
+func (t *Request) FormFile(filename string) (*FormFile, error) {
+	if len(t.body) == 0 && len(t.files) == 0 {
+		t.parseMultipart()
 	}
 
-	// convert json to struct
-	err = json.Unmarshal(jsonBytes, &data)
-	return data, err
+	metadata, ok := t.files[filename]
+
+	if !ok {
+		return &FormFile{}, errors.New("no file found")
+	}
+
+	return &metadata, nil
 }
 
-// for parsing multipart data it takes sizeLimit (byes)
-func (t *Request) ParseMultipart(sizeLimit int) error {
-
-	if !strings.Contains(t.headers["Content-Type"], "multipart/form-data") {
-		return errors.New("Incorrect content type")
+// client side function to get form data
+func FormBody[T any](r *Request) (T, error) {
+	if len(r.body) == 0 && len(r.files) == 0 {
+		r.parseMultipart()
 	}
 
-	// method to send client permission to send data
-	if t.headers["Expect"] == "100-continue" {
-		/* status := statusLine(t.proto, 100) */
-		/* con.Write([]byte(status)) */
+	var data T
 
-		/* var buf bytes.Buffer */
-		/* io.Copy(&buf, con) */
-		/**/
-		/* fullBody := buf.Bytes() */
-		/* fmt.Println(string(fullBody)) */
+	err := json.Unmarshal(r.body, &data)
 
-	}
-
-	// parsing multipart form data
-	if strings.Contains(t.headers["Content-Type"], "multipart/form-data") {
-		/* contentType := strings.SplitN(req.headers["Content-Type"], "=", 2) */
-		/* boundary := strings.TrimSpace(contentType[1]) */
-		/* bodyParts := bytes.Split(req.body, []byte("--"+boundary)) */
-		/**/
-		/* fmt.Println(bodyParts) */
-		/* for _, data := range bodyParts { */
-		/* 	fmt.Println("Part data:") */
-		/* 	fmt.Println(string(data)) */
-		/* } */
-	}
-
-	return nil
+	return data, err
 }
