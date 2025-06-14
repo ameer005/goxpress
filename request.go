@@ -25,23 +25,25 @@ type FormFile struct {
 
 // TODO handle body
 type Request struct {
-	method  string
-	path    string
-	proto   string
-	headers map[string]string
-	body    []byte
-	params  map[string]string
-	query   map[string]string
-	con     net.Conn
-	files   map[string]FormFile
+	method        string
+	path          string
+	proto         string
+	headers       map[string]string
+	body          []byte
+	params        map[string]string
+	query         map[string]string
+	con           net.Conn
+	files         map[string]FormFile
+	multipartRead bool
 }
 
 func parseReq(rawData []byte, con net.Conn) (*Request, error) {
 	req := &Request{
-		headers: make(map[string]string),
-		query:   make(map[string]string),
-		con:     con,
-		files:   make(map[string]FormFile),
+		headers:       make(map[string]string),
+		query:         make(map[string]string),
+		con:           con,
+		files:         make(map[string]FormFile),
+		multipartRead: false,
 	}
 
 	// separting body and header without converting it to string
@@ -178,6 +180,8 @@ func (t *Request) parseMultipart() error {
 
 	contentType := strings.SplitN(t.headers["Content-Type"], "=", 2)
 	boundary := strings.TrimSpace(contentType[1])
+	/* fmt.Println(contentType) */
+	/* fmt.Println(boundary) */
 
 	// method to send client permission to send data
 	if t.headers["Expect"] == "100-continue" {
@@ -192,7 +196,13 @@ func (t *Request) parseMultipart() error {
 	for {
 		part, err := mr.NextPart()
 		if err == io.EOF {
+			fmt.Println("eof")
 			break
+		}
+
+		if err != nil {
+			fmt.Println(err)
+			continue
 		}
 
 		if part.FileName() != "" {
@@ -254,6 +264,8 @@ func (t *Request) parseMultipart() error {
 
 		}
 
+		t.multipartRead = true
+
 	}
 
 	// converting form fields to bytes then storing it to body
@@ -310,14 +322,16 @@ func JSONBody[T any](r *Request) (T, error) {
 
 // client side fucntion to get file metadata
 func (t *Request) FormFile(filename string) (*FormFile, error) {
-	/* if len(t.body) == 0 && len(t.files) == 0 { */
-	t.parseMultipart()
-	/* } */
+	if !t.multipartRead {
+		err := t.parseMultipart()
+		if err != nil {
+			fmt.Print(err)
+		}
+	}
 
 	metadata, ok := t.files[filename]
 
 	if !ok {
-
 		return &FormFile{}, errors.New("no file found")
 	}
 
@@ -339,7 +353,7 @@ func (t *Request) CloseFile(filename string) {
 
 // client side function to get form data
 func FormBody[T any](r *Request) (T, error) {
-	if len(r.body) == 0 && len(r.files) == 0 {
+	if !r.multipartRead {
 		r.parseMultipart()
 	}
 

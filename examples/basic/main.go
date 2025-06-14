@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/ameer005/goxpress"
 	"github.com/ameer005/goxpress/httpmethod"
 )
@@ -17,10 +15,16 @@ func main() {
 	})
 
 	router.Route(httpmethod.POST, "/", func(ctx *goxpress.Context) {
-
-		metadata, _ := ctx.Req.FormFile("file")
-		fmt.Println("yo")
-		fmt.Println(metadata.Path)
+		/* type formdata struct { */
+		/* 	Username string `json:"username"` */
+		/* 	Email    string `json:"email"` */
+		/* } */
+		/**/
+		/* data, err := goxpress.FormBody[formdata](ctx.Req) */
+		/* if err != nil { */
+		/* 	fmt.Println(err) */
+		/* } */
+		/**/
 
 		ctx.Res.Status(200).JSON(map[string]any{"status": "sucess"})
 	})

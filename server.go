@@ -2,6 +2,7 @@ package goxpress
 
 import (
 	"fmt"
+	"io"
 	"net"
 
 	"github.com/ameer005/goxpress/httpmethod"
@@ -42,11 +43,12 @@ func (t *Server) handleConnection(con net.Conn) {
 	defer con.Close()
 
 	/*initializing bytes slice to store request data*/
-	var rawData = make([]byte, 1024)
+	var rawData = make([]byte, 2048)
 
 	/*Storing raw bytes to rawData slice*/
 	_, err := con.Read(rawData)
-	if err != nil {
+
+	if err != nil && err != io.EOF {
 		fmt.Println("Invalid request", err)
 	}
 
