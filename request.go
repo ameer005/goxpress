@@ -57,12 +57,17 @@ func parseReq(rawData []byte, con net.Conn) (*Request, error) {
 	// parsing request line
 	// method / uri / proto
 	requesLine := strings.Split(headerPart[0], " ")
-	if len(requesLine) < 3 {
+	if len(requesLine) < 2 {
 		return nil, errors.New("Malformed request line")
 	}
 	req.method = requesLine[0]
 	req.path = requesLine[1]
-	req.proto = requesLine[2]
+
+	if len(requesLine) >= 3 {
+		req.proto = requesLine[2]
+	} else {
+		req.proto = "HTTP/1.1"
+	}
 
 	// parsing headers
 	i := 1
@@ -305,17 +310,31 @@ func JSONBody[T any](r *Request) (T, error) {
 
 // client side fucntion to get file metadata
 func (t *Request) FormFile(filename string) (*FormFile, error) {
-	if len(t.body) == 0 && len(t.files) == 0 {
-		t.parseMultipart()
-	}
+	/* if len(t.body) == 0 && len(t.files) == 0 { */
+	t.parseMultipart()
+	/* } */
 
 	metadata, ok := t.files[filename]
 
 	if !ok {
+
 		return &FormFile{}, errors.New("no file found")
 	}
 
 	return &metadata, nil
+}
+
+func (t *Request) CloseFile(filename string) {
+	metadata, ok := t.files[filename]
+
+	if !ok {
+		return
+	}
+
+	err := os.Remove(metadata.Path)
+	if err != nil {
+		fmt.Println("Failed to delete file:", err)
+	}
 }
 
 // client side function to get form data

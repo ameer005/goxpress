@@ -12,13 +12,16 @@ var app *goxpress.Server = goxpress.NewServer(":8080")
 func main() {
 	router := app.Router
 
-	router.Use(func(ctx *goxpress.Context) {
-		fmt.Printf("Request: %s %s\n", ctx.Req.RequestMethod())
-		ctx.Req.Headers("yo")
-
+	router.Route(httpmethod.GET, "/", func(ctx *goxpress.Context) {
+		ctx.Res.Status(200).JSON(map[string]any{"status": "sucess"})
 	})
 
-	router.Route(httpmethod.GET, "/", func(ctx *goxpress.Context) {
+	router.Route(httpmethod.POST, "/", func(ctx *goxpress.Context) {
+
+		metadata, _ := ctx.Req.FormFile("file")
+		fmt.Println("yo")
+		fmt.Println(metadata.Path)
+
 		ctx.Res.Status(200).JSON(map[string]any{"status": "sucess"})
 	})
 

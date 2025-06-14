@@ -36,6 +36,7 @@ func (t *Server) Listen() error {
 	}
 }
 
+// TODO increase size of rawData dynamically so it can handle large requests
 func (t *Server) handleConnection(con net.Conn) {
 	// closing connection after successfully handleing this request
 	defer con.Close()
